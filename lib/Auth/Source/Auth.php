@@ -1,13 +1,13 @@
 <?php
 /**
- * @version     1.0.3
+ * @version     1.0.5
  * @package     simpleSAMLphp-mobileid
  * @copyright   Copyright (C) 2012. All rights reserved.
  * @license     Licensed under the Apache License, Version 2.0 or later; see LICENSE.md
  * @author      Swisscom (Schweiz) AG
  */
 
-class sspmod_mobileid_Auth_Source_Auth extends SimpleSAML_Auth_Source {
+class sspmod_mobileid_Auth_Source_Auth extends SimpleSAML\Auth\Source {
 
     /* The string used to identify our states. */
     const STAGEID = 'sspmod_mobileid_Auth_Source_Auth.state';
@@ -27,7 +27,6 @@ class sspmod_mobileid_Auth_Source_Auth extends SimpleSAML_Auth_Source {
     private $certkey_file;
     private $ssl_ca_file;
     private $mid_ca_file;
-    private $remember_msisdn = FALSE;
     private $proxy_host = '';
     private $proxy_port;
     private $proxy_login;
@@ -50,7 +49,7 @@ class sspmod_mobileid_Auth_Source_Auth extends SimpleSAML_Auth_Source {
         /* Call the parent constructor first, as required by the interface. */
         parent::__construct($info, $config);
 
-        $globalConfig = SimpleSAML_Configuration::getInstance();
+        $globalConfig = SimpleSAML\Configuration::getInstance();
         $certdir = $globalConfig->getPathValue('certdir', 'cert/');
 
         /* Mandatory options */
@@ -68,19 +67,19 @@ class sspmod_mobileid_Auth_Source_Auth extends SimpleSAML_Auth_Source {
 
         if (!isset($config['certkey_file']))
             throw new Exception('MobileID: Missing or invalid certkey_file option in config.');
-        $this->certkey_file = SimpleSAML_Utilities::resolvePath($config['certkey_file'], $certdir);
+        $this->certkey_file = SimpleSAML\Utilities::resolvePath($config['certkey_file'], $certdir);
         if (!file_exists($this->certkey_file))
             throw new Exception('MobileID: Missing or invalid certkey_file option in config: ' . $this->certkey_file);
 
         if (!isset($config['ssl_ca_file']))
             throw new Exception('MobileID: Missing or invalid ssl_ca_file option in config.');
-        $this->ssl_ca_file = SimpleSAML_Utilities::resolvePath($config['ssl_ca_file'], $certdir);
+        $this->ssl_ca_file = SimpleSAML\Utilities::resolvePath($config['ssl_ca_file'], $certdir);
         if( !file_exists($this->ssl_ca_file))
             throw new Exception('MobileID: Missing or invalid ssl_ca_file option in config: ' . $this->ssl_ca_file);
         
         if (!isset($config['mid_ca_file']))
             throw new Exception('MobileID: Missing or invalid mid_ca_file option in config.');
-        $this->mid_ca_file = SimpleSAML_Utilities::resolvePath($config['mid_ca_file'], $certdir);
+        $this->mid_ca_file = SimpleSAML\Utilities::resolvePath($config['mid_ca_file'], $certdir);
         if (!file_exists($this->mid_ca_file))
             throw new Exception('MobileID: Missing or invalid mid_ca_file option in config: ' . $this->mid_ca_file);
                 
@@ -88,9 +87,6 @@ class sspmod_mobileid_Auth_Source_Auth extends SimpleSAML_Auth_Source {
         if (isset($config['default_lang']))
             $this->language = $config['default_lang'];
         
-        if (isset($config['remember_msisdn']))
-            $this->remember_msisdn = $config['remember_msisdn'];
-
         if (isset($config['proxy_host'])) {
             $this->proxy_host = $config['proxy_host'];
             if (isset($config['proxy_port']))
@@ -129,23 +125,10 @@ class sspmod_mobileid_Auth_Source_Auth extends SimpleSAML_Auth_Source {
 
         /* We are going to need the authId in order to retrieve this authentication source later. */
         $state[self::AUTHID] = $this->authId;
-
-        /* Remember mobile number */
-        if ($this->remember_msisdn) {
-            $state['remember_msisdn'] = $this->remember_msisdn;
-        }
-
-        /* Enable "cancel" for proper SAML request */
-        if (isset($state['saml:RequestId'])) {
-            $_SESSION['enable_cancel'] = TRUE;
-        } else {
-            $_SESSION['enable_cancel'] = FALSE;
-        }
-
-        $id = SimpleSAML_Auth_State::saveState($state, self::STAGEID);
+        $id = SimpleSAML\Auth\State::saveState($state, self::STAGEID);
 
         $url = SimpleSAML\Module::getModuleURL('mobileid/mobileidlogin.php');
-        SimpleSAML_Utilities::redirect($url, array('AuthState' => $id));
+        SimpleSAML\Utilities::redirect($url, array('AuthState' => $id));
     }
     
     /**
@@ -168,11 +151,11 @@ class sspmod_mobileid_Auth_Source_Auth extends SimpleSAML_Auth_Source {
         assert('is_string($message)');
 
         /* Retrieve the authentication state. */
-        $state = SimpleSAML_Auth_State::loadState($authStateId, self::STAGEID);
+        $state = SimpleSAML\Auth\State::loadState($authStateId, self::STAGEID);
 
         /* Find authentication source. */
         assert('array_key_exists(self::AUTHID, $state)');
-        $source = SimpleSAML_Auth_Source::getById($state[self::AUTHID]);
+        $source = SimpleSAML\Auth\Source::getById($state[self::AUTHID]);
         if ($source === NULL) {
             throw new Exception('Could not find authentication source with id ' . $state[self::AUTHID]);
         }
@@ -183,7 +166,7 @@ class sspmod_mobileid_Auth_Source_Auth extends SimpleSAML_Auth_Source {
         try {
             /* Attempt to log in. */
             $attributes = $source->login($msisdn, $language, $message);
-        } catch (SimpleSAML_Error_Error $e) {
+        } catch (SimpleSAML\Error\Error $e) {
             /* Get the error and parameters */
             $error = $e->getErrorCode();
             $params = $e->getParameters();
@@ -208,7 +191,7 @@ class sspmod_mobileid_Auth_Source_Auth extends SimpleSAML_Auth_Source {
         $state['saml:AuthnContextClassRef'] = 'urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract';
         
         /* Return control to simpleSAMLphp after successful authentication. */
-        SimpleSAML_Auth_Source::completeAuth($state);
+        SimpleSAML\Auth\Source::completeAuth($state);
     }
     
     /* A helper function for setting the right user id.
@@ -380,7 +363,7 @@ class sspmod_mobileid_Auth_Source_Auth extends SimpleSAML_Auth_Source {
             );
 
             /* Set the error */
-            throw new SimpleSAML_Error_Error($error);
+            throw new SimpleSAML\Error\Error($error);
         }
 
         /* Get the Subscriber Info 1901 (MCC/MNC) */
@@ -412,7 +395,7 @@ class sspmod_mobileid_Auth_Source_Auth extends SimpleSAML_Auth_Source {
                 );
 
                 /* Set the error */
-                throw new SimpleSAML_Error_Error($error);
+                throw new SimpleSAML\Error\Error($error);
             }
         }
 

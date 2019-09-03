@@ -61,7 +61,6 @@ Add the module in the sources `config/authsources.php`:
 Optional configuration elements
 ```
     'default_lang'    => 'en|de|..',                      // Default language of the signature request; en if option not set
-    'remember_msisdn' => true,                            // Remember the Mobile ID number in a session cookie; false if option not set
     'proxy_host'      => '',                              // e.g. 'my-proxy.com'
     'proxy_port'      => 8080,                            // Only relevant if proxy_host is set
     'proxy_login'     => 'proxyuser',                     // Only relevant if proxy_host is set
@@ -91,16 +90,6 @@ Optional configuration elements
 
 Returned value is `urn:oasis:names:tc:SAML:2.0:ac:classes:MobileTwoFactorContract`
 
-### Cancel
-
-Will return a Status with following status Codes:
-````
-<samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Responder">
-<samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:AuthnFailed">
-````
-
-Note: cancel is only available if returning a status is possible. If you call the method directly or with 'Test configured authentication sources' at the IDP it will not be available.
-
 ## Advanced configuration
 
 ### Error handling
@@ -111,7 +100,7 @@ Following errors will throw an exception:
 /* Filter the configuration errors */
 $exception_code = array("102", "103", "104", "107", "108", "109");
 if (in_array($erroris, $exception_code)) {
-  SimpleSAML_Logger::warning('MobileID: error in service call ' . var_export($errortxt, TRUE));
+  SimpleSAML\Logger::warning('MobileID: error in service call ' . var_export($errortxt, TRUE));
   throw new Exception('MobileID: error in service call ' . var_export($errortxt, TRUE));
 }
 ````
